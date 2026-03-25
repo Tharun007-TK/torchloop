@@ -152,7 +152,9 @@ class Trainer:
     def _checkpoint(self, val_loss: float) -> None:
         if val_loss < self._best_val_loss:
             self._best_val_loss = val_loss
-            self._best_state = {k: v.clone() for k, v in self.model.state_dict().items()}
+            self._best_state = {
+                k: v.clone() for k, v in self.model.state_dict().items()
+            }
             self._no_improve_count = 0
         else:
             self._no_improve_count += 1

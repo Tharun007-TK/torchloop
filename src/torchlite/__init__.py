@@ -10,7 +10,7 @@ Modules:
 __version__ = "0.1.0"
 __author__ = "Tharun Kumar"
 
-from torchlite.trainer import Trainer
 from torchlite.evaluator import Evaluator
+from torchlite.trainer import Trainer
 
 __all__ = ["Trainer", "Evaluator", "__version__"]

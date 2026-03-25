@@ -101,8 +101,8 @@ class Exporter:
             pip install torchlite[export] onnx2tf
         """
         try:
-            import tensorflow as tf
             import onnx2tf
+            import tensorflow as tf
         except ImportError:
             raise ImportError(
                 "tensorflow or onnx2tf not installed.\n"

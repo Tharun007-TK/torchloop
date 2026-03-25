@@ -21,10 +21,10 @@ import numpy as np
 import torch
 import torch.nn as nn
 from sklearn.metrics import (
+    ConfusionMatrixDisplay,
     classification_report,
     confusion_matrix,
     f1_score,
-    ConfusionMatrixDisplay,
 )
 from torch.utils.data import DataLoader
 
@@ -58,12 +58,19 @@ class Evaluator:
             dict with keys: accuracy, macro_f1, weighted_f1, per_class_f1
         """
         preds, targets = self._infer(loader)
-        print(classification_report(targets, preds, target_names=class_names, zero_division=0))
+        report = classification_report(
+            targets, preds, target_names=class_names, zero_division=0
+        )
+        print(report)
         per_class = f1_score(targets, preds, average=None, zero_division=0).tolist()
         return {
             "accuracy": float((np.array(preds) == np.array(targets)).mean()),
-            "macro_f1": float(f1_score(targets, preds, average="macro", zero_division=0)),
-            "weighted_f1": float(f1_score(targets, preds, average="weighted", zero_division=0)),
+            "macro_f1": float(
+                f1_score(targets, preds, average="macro", zero_division=0)
+            ),
+            "weighted_f1": float(
+                f1_score(targets, preds, average="weighted", zero_division=0)
+            ),
             "per_class_f1": {
                 (class_names[i] if class_names else str(i)): round(v, 4)
                 for i, v in enumerate(per_class)
