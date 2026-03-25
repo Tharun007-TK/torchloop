@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from torchlite import Trainer
+from torchloop import Trainer
 
 
 def _make_loader(n=64, features=16, classes=3, batch=16):

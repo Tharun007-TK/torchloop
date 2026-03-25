@@ -1,11 +1,11 @@
 """
-torchlite.exporter
+torchloop.exporter
 ------------------
 PyTorch → ONNX → TFLite in one place.
-Requires: pip install torchlite[export]
+Requires: pip install torchloop[export]
 
 Usage:
-    from torchlite.exporter import Exporter
+    from torchloop.exporter import Exporter
 
     exp = Exporter(model, input_shape=(1, 3, 224, 224))
     exp.to_onnx("model.onnx")
@@ -61,7 +61,7 @@ class Exporter:
             import onnx
         except ImportError:
             raise ImportError(
-                "onnx is not installed. Run: pip install torchlite[export]"
+                "onnx is not installed. Run: pip install torchloop[export]"
             )
 
         path = Path(path)
@@ -98,7 +98,7 @@ class Exporter:
 
         Note:
             Requires tensorflow and onnx2tf installed.
-            pip install torchlite[export] onnx2tf
+            pip install torchloop[export] onnx2tf
         """
         try:
             import onnx2tf
@@ -106,7 +106,7 @@ class Exporter:
         except ImportError:
             raise ImportError(
                 "tensorflow or onnx2tf not installed.\n"
-                "Run: pip install torchlite[export] onnx2tf"
+                "Run: pip install torchloop[export] onnx2tf"
             )
 
         path = Path(path)

@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "torchlite"
+name = "torchloop"
 version = "0.1.0"
 description = "Lightweight PyTorch utility library for training, evaluation, and TFLite export — without the framework lock-in."
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9"
 authors = [
-  { name = "Tharun K", email = "your@email.com" }
+  { name = "Tharun Kumar", email = "tharunkumarvmt@gmail.com" }
 ]
 keywords = ["pytorch", "deep learning", "training", "tflite", "export", "ml utilities"]
 classifiers = [
@@ -46,15 +46,15 @@ dev = [
   "ruff>=0.1.0",          # linter + formatter
   "hatch>=1.7.0",
 ]
-all = ["torchlite[export,dev]"]
+all = ["torchloop[export,dev]"]
 
 [project.urls]
-Homepage = "https://github.com/Tharun007-TK/torchlite"
-Repository = "https://github.com/Tharun007-TK/torchlite"
-Issues = "https://github.com/Tharun007-TK/torchlite/issues"
+Homepage = "https://github.com/Tharun007-TK/torchloop"
+Repository = "https://github.com/Tharun007-TK/torchloop"
+Issues = "https://github.com/Tharun007-TK/torchloop/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/torchlite"]
+packages = ["src/torchloop"]
 
 [tool.ruff]
 line-length = 88
@@ -65,4 +65,4 @@ select = ["E", "F", "I"]   # pycodestyle + pyflakes + isort
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=src/torchlite --cov-report=term-missing"
+addopts = "--cov=src/torchloop --cov-report=term-missing"

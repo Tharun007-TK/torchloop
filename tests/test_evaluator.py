@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from torchlite import Evaluator
+from torchloop import Evaluator
 
 
 def _make_loader():

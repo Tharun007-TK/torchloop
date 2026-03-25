@@ -1,5 +1,5 @@
 """
-torchlite — Lightweight PyTorch utility library.
+torchloop — Lightweight PyTorch utility library.
 
 Modules:
     trainer   : Training loop, metric logging, checkpoint management
@@ -10,7 +10,7 @@ Modules:
 __version__ = "0.1.0"
 __author__ = "Tharun Kumar"
 
-from torchlite.evaluator import Evaluator
-from torchlite.trainer import Trainer
+from torchloop.evaluator import Evaluator
+from torchloop.trainer import Trainer
 
 __all__ = ["Trainer", "Evaluator", "__version__"]

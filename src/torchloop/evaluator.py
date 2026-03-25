@@ -1,11 +1,11 @@
 """
-torchlite.evaluator
+torchloop.evaluator
 -------------------
 One-call classification diagnostics. No more assembling sklearn +
 matplotlib calls manually across every project.
 
 Usage:
-    from torchlite import Evaluator
+    from torchloop import Evaluator
 
     ev = Evaluator(model, device="cuda")
     ev.report(val_loader, class_names=["cat", "dog"])

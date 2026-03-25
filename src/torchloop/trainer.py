@@ -1,10 +1,10 @@
 """
-torchlite.trainer
+torchloop.trainer
 -----------------
 Wraps the PyTorch training loop so you stop rewriting it.
 
 Usage:
-    from torchlite import Trainer
+    from torchloop import Trainer
 
     trainer = Trainer(model, optimizer, criterion, device="cuda")
     trainer.fit(train_loader, val_loader, epochs=20)
