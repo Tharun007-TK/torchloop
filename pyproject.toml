@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "torchloop"
-version = "0.1.0"
+version = "0.2.0"
 description = "Lightweight PyTorch utility library for training, evaluation, and TFLite export — without the framework lock-in."
 readme = "README.md"
 license = { file = "LICENSE" }
