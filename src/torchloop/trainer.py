@@ -1,13 +1,22 @@
 """
-torchloop.trainer
+torchlite.trainer
 -----------------
 Wraps the PyTorch training loop so you stop rewriting it.
 
 Usage:
     from torchloop import Trainer
+    import torch.optim.lr_scheduler as sched
 
-    trainer = Trainer(model, optimizer, criterion, device="cuda")
-    trainer.fit(train_loader, val_loader, epochs=20)
+    scheduler = sched.StepLR(optimizer, step_size=5, gamma=0.1)
+
+    trainer = Trainer(
+        model, optimizer, criterion,
+        device="cuda",
+        scheduler=scheduler,
+        amp=True,
+        patience=5,
+    )
+    trainer.fit(train_loader, val_loader, epochs=30)
     trainer.save("best.pt")
 """
 
@@ -32,8 +41,12 @@ class Trainer:
         optimizer   : Any torch.optim optimizer.
         criterion   : Loss function (nn.Module or callable).
         device      : 'cuda', 'cpu', or 'mps'. Auto-detects if None.
-        metric_fn   : Optional callable(preds, targets) → float for val metric.
+        metric_fn   : Optional callable(preds, targets) -> float for val metric.
         patience    : Early stopping patience (epochs). None = disabled.
+        scheduler   : Any torch.optim.lr_scheduler. Steps once per epoch.
+                      ReduceLROnPlateau is handled automatically.
+        amp         : If True, enables automatic mixed precision (CUDA only).
+                      Silently ignored on CPU/MPS.
     """
 
     def __init__(
@@ -44,6 +57,8 @@ class Trainer:
         device: Optional[str] = None,
         metric_fn: Optional[Callable] = None,
         patience: Optional[int] = None,
+        scheduler: Optional[object] = None,
+        amp: bool = False,
     ):
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
@@ -51,11 +66,17 @@ class Trainer:
         self.criterion = criterion
         self.metric_fn = metric_fn
         self.patience = patience
+        self.scheduler = scheduler
+
+        # AMP only works on CUDA — silently disable elsewhere
+        self.amp = amp and self.device == "cuda"
+        self.scaler = torch.cuda.amp.GradScaler() if self.amp else None
 
         self.history: dict[str, list] = {
             "train_loss": [],
             "val_loss": [],
             "val_metric": [],
+            "lr": [],
         }
         self._best_val_loss = float("inf")
         self._best_state: Optional[dict] = None
@@ -75,7 +96,7 @@ class Trainer:
         Train the model.
 
         Returns:
-            history dict with train_loss, val_loss, val_metric per epoch.
+            history dict with train_loss, val_loss, val_metric, lr per epoch.
         """
         for epoch in range(1, epochs + 1):
             t0 = time.time()
@@ -89,7 +110,14 @@ class Trainer:
                 self.history["val_metric"].append(val_metric)
                 self._checkpoint(val_loss)
 
-            self._log(epoch, epochs, train_loss, val_loss, val_metric, time.time() - t0)
+            self._step_scheduler(val_loss)
+            current_lr = self._current_lr()
+            self.history["lr"].append(current_lr)
+
+            self._log(
+                epoch, epochs, train_loss, val_loss,
+                val_metric, current_lr, time.time() - t0,
+            )
 
             if self._should_stop():
                 print(f"  Early stopping triggered at epoch {epoch}.")
@@ -108,7 +136,9 @@ class Trainer:
 
     def load(self, path: str | Path) -> None:
         """Load model state dict from path."""
-        self.model.load_state_dict(torch.load(path, map_location=self.device))
+        self.model.load_state_dict(
+            torch.load(path, map_location=self.device)
+        )
         print(f"  Loaded ← {path}")
 
     # ------------------------------------------------------------------
@@ -121,10 +151,20 @@ class Trainer:
         for inputs, targets in tqdm(loader, desc="  train", leave=False):
             inputs, targets = inputs.to(self.device), targets.to(self.device)
             self.optimizer.zero_grad()
-            outputs = self.model(inputs)
-            loss = self.criterion(outputs, targets)
-            loss.backward()
-            self.optimizer.step()
+
+            if self.amp:
+                with torch.cuda.amp.autocast():
+                    outputs = self.model(inputs)
+                    loss = self.criterion(outputs, targets)
+                self.scaler.scale(loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
+            else:
+                outputs = self.model(inputs)
+                loss = self.criterion(outputs, targets)
+                loss.backward()
+                self.optimizer.step()
+
             total_loss += loss.item() * inputs.size(0)
         return total_loss / len(loader.dataset)
 
@@ -134,7 +174,9 @@ class Trainer:
         all_preds, all_targets = [], []
         with torch.no_grad():
             for inputs, targets in tqdm(loader, desc="  val  ", leave=False):
-                inputs, targets = inputs.to(self.device), targets.to(self.device)
+                inputs, targets = (
+                    inputs.to(self.device), targets.to(self.device)
+                )
                 outputs = self.model(inputs)
                 loss = self.criterion(outputs, targets)
                 total_loss += loss.item() * inputs.size(0)
@@ -159,6 +201,19 @@ class Trainer:
         else:
             self._no_improve_count += 1
 
+    def _step_scheduler(self, val_loss: Optional[float]) -> None:
+        if self.scheduler is None:
+            return
+        plateau = "ReduceLROnPlateau"
+        if type(self.scheduler).__name__ == plateau:
+            if val_loss is not None:
+                self.scheduler.step(val_loss)
+        else:
+            self.scheduler.step()
+
+    def _current_lr(self) -> float:
+        return self.optimizer.param_groups[0]["lr"]
+
     def _should_stop(self) -> bool:
         return (
             self.patience is not None
@@ -166,11 +221,18 @@ class Trainer:
         )
 
     @staticmethod
-    def _log(epoch, epochs, train_loss, val_loss, val_metric, elapsed) -> None:
-        parts = [f"Epoch [{epoch:>3}/{epochs}]", f"train_loss={train_loss:.4f}"]
+    def _log(
+        epoch, epochs, train_loss, val_loss,
+        val_metric, lr, elapsed,
+    ) -> None:
+        parts = [
+            f"Epoch [{epoch:>3}/{epochs}]",
+            f"train_loss={train_loss:.4f}",
+        ]
         if val_loss is not None:
             parts.append(f"val_loss={val_loss:.4f}")
         if val_metric is not None:
             parts.append(f"val_metric={val_metric:.4f}")
+        parts.append(f"lr={lr:.2e}")
         parts.append(f"({elapsed:.1f}s)")
         print("  " + "  ".join(parts))

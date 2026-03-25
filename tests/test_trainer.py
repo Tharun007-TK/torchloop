@@ -60,3 +60,41 @@ def test_trainer_with_metric_fn():
     history = trainer.fit(_make_loader(), _make_loader(), epochs=2)
     assert "val_metric" in history
     assert len(history["val_metric"]) == 2
+
+def test_trainer_with_scheduler():
+    import torch.optim.lr_scheduler as sched
+    model = _make_model()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.CrossEntropyLoss()
+    scheduler = sched.StepLR(optimizer, step_size=1, gamma=0.5)
+    trainer = Trainer(
+        model, optimizer, criterion, device="cpu", scheduler=scheduler
+    )
+    history = trainer.fit(_make_loader(), _make_loader(), epochs=3)
+    assert history["lr"][2] < history["lr"][0]
+
+
+def test_trainer_with_plateau_scheduler():
+    import torch.optim.lr_scheduler as sched
+    model = _make_model()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.CrossEntropyLoss()
+    scheduler = sched.ReduceLROnPlateau(optimizer, patience=1)
+    trainer = Trainer(
+        model, optimizer, criterion, device="cpu", scheduler=scheduler
+    )
+    history = trainer.fit(_make_loader(), _make_loader(), epochs=3)
+    assert "lr" in history
+    assert len(history["lr"]) == 3
+
+
+def test_amp_silently_disabled_on_cpu():
+    model = _make_model()
+    optimizer = torch.optim.Adam(model.parameters())
+    criterion = nn.CrossEntropyLoss()
+    trainer = Trainer(
+        model, optimizer, criterion, device="cpu", amp=True
+    )
+    assert trainer.amp is False
+    history = trainer.fit(_make_loader(), epochs=2)
+    assert len(history["train_loss"]) == 2
