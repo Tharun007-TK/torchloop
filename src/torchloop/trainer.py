@@ -23,13 +23,16 @@ Usage:
 from __future__ import annotations
 
 import time
+import warnings
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+
+from torchloop.callbacks import Callback, StopTraining
 
 
 class Trainer:
@@ -37,16 +40,19 @@ class Trainer:
     Minimal, opinionated PyTorch training loop.
 
     Args:
-        model       : nn.Module to train.
-        optimizer   : Any torch.optim optimizer.
-        criterion   : Loss function (nn.Module or callable).
-        device      : 'cuda', 'cpu', or 'mps'. Auto-detects if None.
-        metric_fn   : Optional callable(preds, targets) -> float for val metric.
-        patience    : Early stopping patience (epochs). None = disabled.
-        scheduler   : Any torch.optim.lr_scheduler. Steps once per epoch.
-                      ReduceLROnPlateau is handled automatically.
-        amp         : If True, enables automatic mixed precision (CUDA only).
-                      Silently ignored on CPU/MPS.
+        model: nn.Module to train.
+        optimizer: Any torch.optim optimizer.
+        criterion: Loss function (nn.Module or callable).
+        device: 'cuda', 'cpu', or 'mps'. Auto-detects if None.
+        metric_fn: Optional callable(preds, targets) -> float for val metric.
+        patience: Early stopping patience (epochs). None = disabled.
+        scheduler: Any torch.optim.lr_scheduler. Steps once per epoch.
+            ReduceLROnPlateau is handled automatically.
+        amp: Deprecated alias for use_amp, kept for backward compatibility.
+        use_amp: If True, enables automatic mixed precision on CUDA.
+        accumulate_steps: Number of batches to accumulate gradients before an
+            optimizer step.
+        callbacks: Optional list of callback instances.
     """
 
     def __init__(
@@ -58,8 +64,23 @@ class Trainer:
         metric_fn: Optional[Callable] = None,
         patience: Optional[int] = None,
         scheduler: Optional[object] = None,
-        amp: bool = False,
+        amp: Optional[bool] = None,
+        use_amp: bool = False,
+        accumulate_steps: int = 1,
+        callbacks: Optional[list[Callback]] = None,
     ):
+        if accumulate_steps < 1:
+            raise ValueError("accumulate_steps must be >= 1")
+
+        if amp is not None:
+            warnings.warn(
+                "`amp` is deprecated and will be removed in a future release; "
+                "use `use_amp` instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            use_amp = amp
+
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.model = model.to(self.device)
         self.optimizer = optimizer
@@ -67,10 +88,20 @@ class Trainer:
         self.metric_fn = metric_fn
         self.patience = patience
         self.scheduler = scheduler
+        self.accumulate_steps = accumulate_steps
+        self.callbacks = list(callbacks) if callbacks is not None else []
+        self._stop_early = False
 
-        # AMP only works on CUDA — silently disable elsewhere
-        self.amp = amp and self.device == "cuda"
-        self.scaler = torch.cuda.amp.GradScaler() if self.amp else None
+        if use_amp and self.device != "cuda":
+            warnings.warn(
+                "AMP requested on non-CUDA device. AMP will be disabled.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        self.use_amp = bool(use_amp and self.device == "cuda")
+        self.amp = self.use_amp
+        self.scaler = torch.cuda.amp.GradScaler() if self.use_amp else None
 
         self.history: dict[str, list] = {
             "train_loss": [],
@@ -91,15 +122,17 @@ class Trainer:
         train_loader: DataLoader,
         val_loader: Optional[DataLoader] = None,
         epochs: int = 10,
-    ) -> dict:
+    ) -> dict[str, list[Any]]:
         """
         Train the model.
 
         Returns:
             history dict with train_loss, val_loss, val_metric, lr per epoch.
         """
+        self._trigger_hook("on_train_begin", logs=self.history)
         for epoch in range(1, epochs + 1):
             t0 = time.time()
+            self._trigger_hook("on_epoch_begin", epoch=epoch, logs=self.history)
             train_loss = self._train_epoch(train_loader)
             self.history["train_loss"].append(train_loss)
 
@@ -119,6 +152,15 @@ class Trainer:
                 val_metric, current_lr, time.time() - t0,
             )
 
+            epoch_logs = {
+                "train_loss": train_loss,
+                "val_loss": val_loss,
+                "val_metric": val_metric,
+                "lr": current_lr,
+                "model": self.model,
+            }
+            self._trigger_hook("on_epoch_end", epoch=epoch, logs=epoch_logs)
+
             if self._should_stop():
                 print(f"  Early stopping triggered at epoch {epoch}.")
                 break
@@ -127,7 +169,12 @@ class Trainer:
             self.model.load_state_dict(self._best_state)
             print("  Restored best model weights.")
 
+        self._trigger_hook("on_train_end", logs=self.history)
         return self.history
+
+    def add_callback(self, callback: Callback) -> None:
+        """Add a callback instance to the trainer."""
+        self.callbacks.append(callback)
 
     def save(self, path: str | Path) -> None:
         """Save model state dict to path."""
@@ -148,25 +195,51 @@ class Trainer:
     def _train_epoch(self, loader: DataLoader) -> float:
         self.model.train()
         total_loss = 0.0
-        for inputs, targets in tqdm(loader, desc="  train", leave=False):
-            inputs, targets = inputs.to(self.device), targets.to(self.device)
-            self.optimizer.zero_grad()
+        self.optimizer.zero_grad(set_to_none=True)
 
-            if self.amp:
+        pending_steps = 0
+        for batch_idx, (inputs, targets) in enumerate(
+            tqdm(loader, desc="  train", leave=False)
+        ):
+            inputs, targets = inputs.to(self.device), targets.to(self.device)
+
+            if self.use_amp:
                 with torch.cuda.amp.autocast():
                     outputs = self.model(inputs)
-                    loss = self.criterion(outputs, targets)
+                    raw_loss = self.criterion(outputs, targets)
+                    loss = raw_loss / self.accumulate_steps
                 self.scaler.scale(loss).backward()
-                self.scaler.step(self.optimizer)
-                self.scaler.update()
             else:
                 outputs = self.model(inputs)
-                loss = self.criterion(outputs, targets)
+                raw_loss = self.criterion(outputs, targets)
+                loss = raw_loss / self.accumulate_steps
                 loss.backward()
-                self.optimizer.step()
 
-            total_loss += loss.item() * inputs.size(0)
+            pending_steps += 1
+            should_step = (batch_idx + 1) % self.accumulate_steps == 0
+            if should_step:
+                self._optimizer_step()
+                pending_steps = 0
+
+            total_loss += raw_loss.item() * inputs.size(0)
+            self._trigger_hook(
+                "on_batch_end",
+                batch=batch_idx,
+                logs={"loss": float(raw_loss.item())},
+            )
+
+        if pending_steps > 0:
+            self._optimizer_step()
+
         return total_loss / len(loader.dataset)
+
+    def _optimizer_step(self) -> None:
+        if self.use_amp:
+            self.scaler.step(self.optimizer)
+            self.scaler.update()
+        else:
+            self.optimizer.step()
+        self.optimizer.zero_grad(set_to_none=True)
 
     def _val_epoch(self, loader: DataLoader) -> tuple[float, Optional[float]]:
         self.model.eval()
@@ -216,9 +289,22 @@ class Trainer:
 
     def _should_stop(self) -> bool:
         return (
-            self.patience is not None
-            and self._no_improve_count >= self.patience
+            self._stop_early
+            or (
+                self.patience is not None
+                and self._no_improve_count >= self.patience
+            )
         )
+
+    def _trigger_hook(self, hook_name: str, **kwargs: Any) -> None:
+        for callback in self.callbacks:
+            hook = getattr(callback, hook_name, None)
+            if hook is None:
+                continue
+            try:
+                hook(**kwargs)
+            except StopTraining:
+                self._stop_early = True
 
     @staticmethod
     def _log(

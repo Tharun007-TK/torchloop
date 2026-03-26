@@ -1,8 +1,10 @@
 import torch
 import torch.nn as nn
+import pytest
 from torch.utils.data import DataLoader, TensorDataset
 
 from torchloop import Trainer
+from torchloop.callbacks import Callback, EarlyStopping
 
 
 def _make_loader(n=64, features=16, classes=3, batch=16):
@@ -88,13 +90,126 @@ def test_trainer_with_plateau_scheduler():
     assert len(history["lr"]) == 3
 
 
-def test_amp_silently_disabled_on_cpu():
+def test_use_amp_silently_disabled_on_cpu():
     model = _make_model()
     optimizer = torch.optim.Adam(model.parameters())
     criterion = nn.CrossEntropyLoss()
     trainer = Trainer(
-        model, optimizer, criterion, device="cpu", amp=True
+        model, optimizer, criterion, device="cpu", use_amp=True
     )
     assert trainer.amp is False
     history = trainer.fit(_make_loader(), epochs=2)
     assert len(history["train_loss"]) == 2
+
+
+def test_trainer_gradient_accumulation():
+    model = _make_model()
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
+    criterion = nn.CrossEntropyLoss()
+    trainer = Trainer(
+        model,
+        optimizer,
+        criterion,
+        device="cpu",
+        accumulate_steps=3,
+    )
+
+    step_count = 0
+    original_step = optimizer.step
+
+    def _counting_step(*args, **kwargs):
+        nonlocal step_count
+        step_count += 1
+        return original_step(*args, **kwargs)
+
+    optimizer.step = _counting_step  # type: ignore[assignment]
+    trainer.fit(_make_loader(n=64, batch=16), epochs=1)
+
+    assert step_count == 2
+
+
+def test_trainer_invalid_accumulate_steps_raises():
+    model = _make_model()
+    optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
+    criterion = nn.CrossEntropyLoss()
+    with pytest.raises(ValueError, match="accumulate_steps must be >= 1"):
+        Trainer(model, optimizer, criterion, accumulate_steps=0)
+
+
+def test_trainer_callbacks_triggered():
+    class Recorder(Callback):
+        def __init__(self):
+            self.train_begin = 0
+            self.epoch_begin = 0
+            self.batch_end = 0
+            self.epoch_end = 0
+            self.train_end = 0
+
+        def on_train_begin(self, logs=None):
+            self.train_begin += 1
+
+        def on_epoch_begin(self, epoch, logs=None):
+            self.epoch_begin += 1
+
+        def on_batch_end(self, batch, logs=None):
+            self.batch_end += 1
+
+        def on_epoch_end(self, epoch, logs=None):
+            self.epoch_end += 1
+
+        def on_train_end(self, logs=None):
+            self.train_end += 1
+
+    model = _make_model()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.CrossEntropyLoss()
+    recorder = Recorder()
+
+    trainer = Trainer(
+        model,
+        optimizer,
+        criterion,
+        device="cpu",
+        callbacks=[recorder],
+    )
+    trainer.fit(_make_loader(n=32, batch=8), epochs=2)
+
+    assert recorder.train_begin == 1
+    assert recorder.epoch_begin == 2
+    assert recorder.batch_end == 8
+    assert recorder.epoch_end == 2
+    assert recorder.train_end == 1
+
+
+def test_early_stopping_callback_stops_training():
+    model = _make_model()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.CrossEntropyLoss()
+    callback = EarlyStopping(patience=1, monitor="val_loss", min_delta=0.1)
+
+    trainer = Trainer(
+        model,
+        optimizer,
+        criterion,
+        device="cpu",
+        callbacks=[callback],
+    )
+    history = trainer.fit(_make_loader(), _make_loader(), epochs=10)
+    assert len(history["train_loss"]) < 10
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")
+def test_trainer_amp_cuda():
+    model = _make_model().cuda()
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    criterion = nn.CrossEntropyLoss()
+    trainer = Trainer(
+        model,
+        optimizer,
+        criterion,
+        device="cuda",
+        use_amp=True,
+    )
+    history = trainer.fit(_make_loader(), epochs=1)
+    assert trainer.use_amp is True
+    assert len(history["train_loss"]) == 1

@@ -20,10 +20,17 @@ You write the same PyTorch training loop in every project. Same checkpoint logic
 ## Install
 
 ```bash
+# Base installation
 pip install torchloop
 
 # With TFLite export support
 pip install torchloop[export]
+
+# With edge deployment support
+pip install torchloop[edge]
+
+# Development setup
+pip install torchloop[dev]
 ```
 
 ---
@@ -33,15 +40,20 @@ pip install torchloop[export]
 ### Training
 
 ```python
-from torchloop import Trainer
+from torchloop import EarlyStopping, ModelCheckpoint, Trainer
 
 trainer = Trainer(
     model,
     optimizer=torch.optim.Adam(model.parameters()),
     criterion=torch.nn.CrossEntropyLoss(),
     device="cuda",
-    patience=5,           # early stopping
+    use_amp=True,
+    accumulate_steps=4,
+    patience=5,
 )
+
+trainer.add_callback(EarlyStopping(patience=5))
+trainer.add_callback(ModelCheckpoint(filepath="best.pt"))
 
 history = trainer.fit(train_loader, val_loader, epochs=30)
 trainer.save("best.pt")
@@ -73,6 +85,25 @@ exp.to_onnx("model.onnx")
 exp.to_tflite("model.tflite", quantize=True)
 ```
 
+### Edge Deployment
+
+```python
+from torchloop.edge import deploy_to_edge, estimate_model
+
+stats = estimate_model(model, (1, 3, 224, 224), target_device="esp32")
+print(f"RAM: {stats['estimated_ram_mb']} MB")
+print(f"Latency: {stats['estimated_latency_ms']} ms")
+
+deploy_to_edge(
+    model,
+    target="esp32",
+    input_shape=(1, 3, 224, 224),
+    output_path="model.tflite",
+    quantize=True,
+    quantize_type="int8",
+)
+```
+
 ---
 
 ## Design Principles
@@ -85,9 +116,12 @@ exp.to_tflite("model.tflite", quantize=True)
 
 ## Roadmap
 
-- [ ] `v0.1.0` — Trainer, Evaluator, Exporter
-- [ ] `v0.2.0` — LR scheduler support, mixed precision (AMP)
-- [ ] `v0.3.0` — W&B / MLflow logging hooks
+- [x] `v0.1.0` — Trainer, Evaluator, Exporter
+- [x] `v0.2.0` — LR scheduler support, mixed precision (AMP)
+- [x] `v0.2.1` — Gradient accumulation + callbacks
+- [x] `v0.2.2` — Edge submodule
+- [ ] `v0.3.0` — W&B / MLflow hooks + CoreML export
+- [ ] `v0.3.1` — Model pruning utilities
 
 ---
 
