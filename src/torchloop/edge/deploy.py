@@ -61,7 +61,10 @@ def deploy_to_edge(
     artifact_format = "onnx"
 
     if target in {"esp32", "android"}:
-        artifact_path = output if output.suffix == ".tflite" else output.with_suffix(".tflite")
+        artifact_path = (
+            output if output.suffix == ".tflite"
+            else output.with_suffix(".tflite")
+        )
         if target == "esp32" and quantize_type != "int8":
             warnings.warn(
                 "ESP32 is typically best with int8 quantization.",
@@ -79,7 +82,10 @@ def deploy_to_edge(
             _convert_to_tflite(onnx_path, artifact_path, quantize, quantize_type)
             artifact_format = "tflite"
     elif target == "ios":
-        artifact_path = output if output.suffix == ".mlpackage" else output.with_suffix(".mlpackage")
+        artifact_path = (
+            output if output.suffix == ".mlpackage"
+            else output.with_suffix(".mlpackage")
+        )
         _convert_to_coreml(model, input_shape, artifact_path)
         artifact_format = "coreml"
     elif target == "jetson":
@@ -109,7 +115,9 @@ def _export_to_onnx(
         onnx_name = "".join(["on", "nx"])
         onnx = import_module(onnx_name)
     except ImportError as exc:
-        raise ImportError("onnx is required. Install with: pip install torchloop[edge]") from exc
+        raise ImportError(
+            "onnx is required. Install with: pip install torchloop[edge]"
+        ) from exc
 
     model.eval()
     device = _get_model_device(model)
@@ -184,7 +192,9 @@ def _convert_to_coreml(
         coremltools_name = "".join(["coreml", "tools"])
         ct = import_module(coremltools_name)
     except ImportError as exc:
-        raise ImportError("coremltools is required. Install with: pip install torchloop[edge]") from exc
+        raise ImportError(
+            "coremltools is required. Install with: pip install torchloop[edge]"
+        ) from exc
 
     model_cpu = model.to("cpu").eval()
     traced = torch.jit.trace(model_cpu, torch.randn(*input_shape))

@@ -63,19 +63,34 @@ def _estimate_activation_mb(input_shape: tuple[int, ...]) -> float:
     return (numel * 4 * 2) / (1024 * 1024)
 
 
-def _estimate_flops(model: torch.nn.Module, input_shape: tuple[int, ...]) -> int:
+def _estimate_flops(
+    model: torch.nn.Module,
+    input_shape: tuple[int, ...],
+) -> int:
     """Estimate FLOPs using hooks for common modules (Conv2d, Linear)."""
     flops = 0
     hooks = []
 
-    def conv_hook(module: torch.nn.Conv2d, _inp: tuple[torch.Tensor], out: torch.Tensor) -> None:
+    def conv_hook(
+        module: torch.nn.Conv2d,
+        _inp: tuple[torch.Tensor],
+        out: torch.Tensor,
+    ) -> None:
         nonlocal flops
         batch = out.shape[0]
         out_h, out_w = out.shape[2], out.shape[3]
-        kernel_ops = module.kernel_size[0] * module.kernel_size[1] * (module.in_channels / module.groups)
+        kernel_ops = (
+            module.kernel_size[0]
+            * module.kernel_size[1]
+            * (module.in_channels / module.groups)
+        )
         flops += int(batch * out_h * out_w * module.out_channels * kernel_ops * 2)
 
-    def linear_hook(module: torch.nn.Linear, inp: tuple[torch.Tensor], _out: torch.Tensor) -> None:
+    def linear_hook(
+        module: torch.nn.Linear,
+        inp: tuple[torch.Tensor],
+        _out: torch.Tensor,
+    ) -> None:
         nonlocal flops
         batch = inp[0].shape[0]
         flops += int(batch * module.in_features * module.out_features * 2)

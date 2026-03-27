@@ -32,7 +32,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from torchloop.callbacks import Callback, StopTraining
+from torchloop.callbacks import Callback
 
 
 class Trainer:
@@ -129,10 +129,9 @@ class Trainer:
         Returns:
             history dict with train_loss, val_loss, val_metric, lr per epoch.
         """
-        self._trigger_hook("on_train_begin", logs=self.history)
+        self._run_callbacks("on_train_begin", dict(self.history))
         for epoch in range(1, epochs + 1):
             t0 = time.time()
-            self._trigger_hook("on_epoch_begin", epoch=epoch, logs=self.history)
             train_loss = self._train_epoch(train_loader)
             self.history["train_loss"].append(train_loss)
 
@@ -153,13 +152,13 @@ class Trainer:
             )
 
             epoch_logs = {
+                "epoch": epoch,
                 "train_loss": train_loss,
                 "val_loss": val_loss,
                 "val_metric": val_metric,
                 "lr": current_lr,
-                "model": self.model,
             }
-            self._trigger_hook("on_epoch_end", epoch=epoch, logs=epoch_logs)
+            self._run_callbacks("on_epoch_end", epoch_logs)
 
             if self._should_stop():
                 print(f"  Early stopping triggered at epoch {epoch}.")
@@ -169,7 +168,7 @@ class Trainer:
             self.model.load_state_dict(self._best_state)
             print("  Restored best model weights.")
 
-        self._trigger_hook("on_train_end", logs=self.history)
+        self._run_callbacks("on_train_end", dict(self.history))
         return self.history
 
     def add_callback(self, callback: Callback) -> None:
@@ -222,11 +221,6 @@ class Trainer:
                 pending_steps = 0
 
             total_loss += raw_loss.item() * inputs.size(0)
-            self._trigger_hook(
-                "on_batch_end",
-                batch=batch_idx,
-                logs={"loss": float(raw_loss.item())},
-            )
 
         if pending_steps > 0:
             self._optimizer_step()
@@ -296,15 +290,15 @@ class Trainer:
             )
         )
 
-    def _trigger_hook(self, hook_name: str, **kwargs: Any) -> None:
-        for callback in self.callbacks:
-            hook = getattr(callback, hook_name, None)
+    def _run_callbacks(self, event: str, logs: dict[str, Any]) -> None:
+        for callback in (self.callbacks or []):
+            hook = getattr(callback, event, None)
             if hook is None:
                 continue
-            try:
-                hook(**kwargs)
-            except StopTraining:
-                self._stop_early = True
+            if event == "on_epoch_end":
+                hook(int(logs.get("epoch", 0)), logs)
+            else:
+                hook(logs)
 
     @staticmethod
     def _log(

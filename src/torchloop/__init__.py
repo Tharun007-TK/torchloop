@@ -7,16 +7,10 @@ Modules:
     exporter  : PyTorch → ONNX → TFLite with optional quantization
 """
 
-__version__ = "0.2.3"
+__version__ = "0.3.0"
 __author__ = "Tharun Kumar"
 
-from torchloop.callbacks import (
-    CSVLogger,
-    Callback,
-    EarlyStopping,
-    ModelCheckpoint,
-    StopTraining,
-)
+from torchloop.callbacks import Callback, MLflowLogger, WandBLogger
 from torchloop.edge import deploy_to_edge, estimate_model
 from torchloop.evaluator import Evaluator
 from torchloop.exporter import Exporter
@@ -27,10 +21,8 @@ __all__ = [
     "Evaluator",
     "Exporter",
     "Callback",
-    "EarlyStopping",
-    "ModelCheckpoint",
-    "CSVLogger",
-    "StopTraining",
+    "WandBLogger",
+    "MLflowLogger",
     "deploy_to_edge",
     "estimate_model",
     "__version__",

@@ -4,7 +4,7 @@ import pytest
 from torch.utils.data import DataLoader, TensorDataset
 
 from torchloop import Trainer
-from torchloop.callbacks import Callback, EarlyStopping
+from torchloop.callbacks import Callback
 
 
 def _make_loader(n=64, features=16, classes=3, batch=16):
@@ -140,19 +140,11 @@ def test_trainer_callbacks_triggered():
     class Recorder(Callback):
         def __init__(self):
             self.train_begin = 0
-            self.epoch_begin = 0
-            self.batch_end = 0
             self.epoch_end = 0
             self.train_end = 0
 
         def on_train_begin(self, logs=None):
             self.train_begin += 1
-
-        def on_epoch_begin(self, epoch, logs=None):
-            self.epoch_begin += 1
-
-        def on_batch_end(self, batch, logs=None):
-            self.batch_end += 1
 
         def on_epoch_end(self, epoch, logs=None):
             self.epoch_end += 1
@@ -175,17 +167,22 @@ def test_trainer_callbacks_triggered():
     trainer.fit(_make_loader(n=32, batch=8), epochs=2)
 
     assert recorder.train_begin == 1
-    assert recorder.epoch_begin == 2
-    assert recorder.batch_end == 8
     assert recorder.epoch_end == 2
     assert recorder.train_end == 1
 
 
-def test_early_stopping_callback_stops_training():
+def test_callback_receives_epoch_end_for_each_epoch():
+    class EpochRecorder(Callback):
+        def __init__(self):
+            self.epochs = []
+
+        def on_epoch_end(self, epoch, logs=None):
+            self.epochs.append(epoch)
+
     model = _make_model()
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
     criterion = nn.CrossEntropyLoss()
-    callback = EarlyStopping(patience=1, monitor="val_loss", min_delta=0.1)
+    callback = EpochRecorder()
 
     trainer = Trainer(
         model,
@@ -194,8 +191,8 @@ def test_early_stopping_callback_stops_training():
         device="cpu",
         callbacks=[callback],
     )
-    history = trainer.fit(_make_loader(), _make_loader(), epochs=10)
-    assert len(history["train_loss"]) < 10
+    trainer.fit(_make_loader(), _make_loader(), epochs=3)
+    assert callback.epochs == [1, 2, 3]
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA not available")

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "torchloop"
-version = "0.2.3"
+version = "0.3.0"
 description = "Lightweight PyTorch utility library for training, evaluation, and TFLite export — without the framework lock-in."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -41,6 +41,15 @@ edge = [
   "tensorflow-lite-runtime>=2.15; platform_system != 'Darwin'",
   "coremltools>=7.0; platform_system == 'Darwin'",
 ]
+logging = [
+  "wandb>=0.15.0",
+  "mlflow>=2.0.0",
+]
+docs = [
+  "mkdocs>=1.5.0",
+  "mkdocs-material>=9.0.0",
+  "mkdocstrings[python]>=0.24.0",
+]
 export = [
   "onnx>=1.14.0",
   "onnxruntime>=1.15.0",
@@ -55,7 +64,7 @@ dev = [
   "ruff>=0.1.0",          # linter + formatter
   "hatch>=1.7.0",
 ]
-all = ["torchloop[edge,export,dev]"]
+all = ["torchloop[export,dev,logging]"]
 
 [project.urls]
 Homepage = "https://github.com/Tharun007-TK/torchloop"
