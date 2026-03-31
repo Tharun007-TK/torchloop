@@ -1,0 +1,55 @@
+site_name: torchloop
+site_description: Lightweight PyTorch utility library for training, evaluation, and edge deployment — without the framework lock-in.
+site_author: Tharun Kumar
+repo_url: https://github.com/Tharun007-TK/torchloop
+repo_name: Tharun007-TK/torchloop
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Getting Started: getting-started.md
+  - API Reference:
+      - Trainer: api/trainer.md
+      - Evaluator: api/evaluator.md
+      - Callbacks: api/callbacks.md
+      - Exporter: api/exporter.md
+  - Changelog: changelog.md
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
