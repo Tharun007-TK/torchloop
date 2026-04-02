@@ -1,31 +1,94 @@
 site_name: torchloop
-site_description: Lightweight PyTorch utility library for training, evaluation, and edge deployment — without the framework lock-in.
+site_description: Lightweight PyTorch utility library for training, evaluation, and edge deployment.
 site_author: Tharun Kumar
+site_url: https://tharun007-tk.github.io/torchloop/
 repo_url: https://github.com/Tharun007-TK/torchloop
-repo_name: Tharun007-TK/torchloop
-edit_uri: edit/main/docs/
+repo_name: torchloop
+edit_uri: ""
 
 theme:
   name: material
+  icon:
+    logo: material/lightning-bolt
+    repo: fontawesome/brands/github
+  favicon: assets/favicon.png
+  font:
+    text: Roboto
+    code: Roboto Mono
   palette:
-    - scheme: default
-      primary: indigo
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
       accent: indigo
       toggle:
-        icon: material/brightness-7
+        icon: material/weather-night
         name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
       accent: indigo
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-sunny
         name: Switch to light mode
   features:
+    - navigation.instant
+    - navigation.tracking
     - navigation.tabs
     - navigation.sections
+    - navigation.expand
     - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
     - search.highlight
     - content.code.copy
+    - content.code.annotate
+    - announce.dismiss
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/Tharun007-TK/torchloop
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/torchloop/
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/tharun-kumar-p
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            show_source: true
+            show_root_heading: true
+            heading_level: 2
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
 
 nav:
   - Home: index.md
@@ -37,19 +100,3 @@ nav:
       - Callbacks: api/callbacks.md
       - Exporter: api/exporter.md
   - Changelog: changelog.md
-
-plugins:
-  - search
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: [src]
-
-markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.superfences
-  - pymdownx.tabbed:
-      alternate_style: true
-  - admonition
-  - pymdownx.details

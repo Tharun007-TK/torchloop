@@ -1,0 +1,346 @@
+/* ============================================
+   Hero Section - Full Width Dark Banner
+   ============================================ */
+.hero-section {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  margin-top: -2rem;
+  margin-bottom: 3rem;
+  padding: 4rem 2rem;
+  text-align: center;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: #ffffff;
+}
+
+[data-md-color-scheme="default"] .hero-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.hero-section h1 {
+  font-family: "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 auto 1rem;
+  max-width: 800px;
+  color: #ffffff;
+}
+
+.hero-section p {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  margin: 0 auto 2rem;
+  max-width: 700px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+}
+
+.hero-section .md-button {
+  margin: 0.5rem;
+  padding: 0.75rem 2rem;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.hero-section .md-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@media screen and (max-width: 768px) {
+  .hero-section {
+    padding: 3rem 1.5rem;
+  }
+
+  .hero-section h1 {
+    font-size: 2rem;
+  }
+
+  .hero-section p {
+    font-size: 1.1rem;
+  }
+
+  .hero-section .md-button {
+    display: block;
+    margin: 0.75rem auto;
+    max-width: 280px;
+  }
+}
+
+/* ============================================
+   Typography Enhancements
+   ============================================ */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.md-typeset h1 {
+  font-size: 2.5rem;
+}
+
+.md-typeset h2 {
+  font-size: 2rem;
+  margin-top: 2.5rem;
+}
+
+.md-typeset h3 {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+}
+
+/* ============================================
+   Code Block Enhancements
+   ============================================ */
+.md-typeset code {
+  font-family: "Roboto Mono", "Consolas", "Monaco", monospace;
+  font-size: 0.875rem;
+  padding: 0.2em 0.4em;
+  border-radius: 4px;
+}
+
+.md-typeset pre code {
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.md-typeset .highlight pre {
+  padding: 1.25rem;
+  border-radius: 8px;
+  background-color: #1e293b;
+}
+
+[data-md-color-scheme="default"] .md-typeset .highlight pre {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+/* ============================================
+   Navigation Sidebar Refinements
+   ============================================ */
+.md-nav__item {
+  line-height: 1.4;
+}
+
+.md-nav__link--active {
+  font-weight: 600;
+  color: var(--md-accent-fg-color);
+}
+
+.md-nav__link:hover {
+  color: var(--md-accent-fg-color);
+}
+
+/* ============================================
+   Table Styling
+   ============================================ */
+.md-typeset table:not([class]) {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-size: 0.9rem;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-default-fg-color--lightest);
+  font-weight: 700;
+  text-align: left;
+  padding: 0.9rem 1rem;
+}
+
+.md-typeset table:not([class]) td {
+  padding: 0.9rem 1rem;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+.md-typeset table:not([class]) tbody tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+[data-md-color-scheme="slate"]
+  .md-typeset
+  table:not([class])
+  tbody
+  tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* ============================================
+   Admonitions
+   ============================================ */
+.md-typeset .admonition {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid var(--md-accent-fg-color);
+}
+
+.md-typeset .admonition-title {
+  font-weight: 700;
+  padding-left: 2.5rem;
+}
+
+/* ============================================
+   Footer Adjustments
+   ============================================ */
+.md-footer-meta__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.md-footer-meta .md-copyright {
+  display: none;
+}
+
+/* ============================================
+   Smooth Scrolling & Misc
+   ============================================ */
+html {
+  scroll-behavior: smooth;
+}
+
+.md-typeset a {
+  transition: color 0.15s ease;
+}
+
+.md-typeset hr {
+  border: none;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+  margin: 2.5rem 0;
+}
+
+/* ============================================
+   Custom Primary Color — Override Purple
+   ============================================ */
+:root {
+  --md-primary-fg-color: #0f172a;
+  --md-primary-fg-color--light: #1e293b;
+  --md-primary-fg-color--dark: #020617;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #f8fafc;
+}
+
+/* Force navbar text white */
+.md-header,
+.md-tabs {
+  background-color: #0f172a;
+  color: #ffffff;
+}
+
+.md-tabs__link,
+.md-header__title {
+  color: #ffffff !important;
+}
+
+/* Hero font fix — remove serif */
+.hero-section h1 {
+  font-family: "Roboto", -apple-system, BlinkMacSystemFont, sans-serif !important;
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+[data-md-color-scheme="slate"] .hero-section h1 {
+  color: #f8fafc;
+}
+
+/* Fix hero background for light mode */
+[data-md-color-scheme="default"] .hero-section {
+  background: #f1f5f9;
+}
+
+/* Font hierarchy */
+.md-typeset h1 {
+  font-size: 2.25rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+.md-typeset h2 {
+  font-size: 1.75rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: #1e293b;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+  margin-top: 2.5rem;
+}
+
+.md-typeset h3 {
+  font-size: 1.375rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.md-typeset p {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: #475569;
+  font-weight: 400;
+}
+
+/* ============================================
+   Navigation Font Size Hierarchy Fix
+   ============================================ */
+
+/* Top navbar tabs */
+.md-tabs__link {
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* Sidebar nav — top level */
+.md-nav--primary .md-nav__link {
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+/* Sidebar nav — section titles */
+.md-nav__title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Sidebar nav — nested items */
+.md-nav--secondary .md-nav__link {
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+/* Sidebar nav — active item */
+.md-nav__link--active {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* Header title */
+.md-header__title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h1 { color: #f1f5f9; }
+[data-md-color-scheme="slate"] .md-typeset h2 { color: #e2e8f0; }
+[data-md-color-scheme="slate"] .md-typeset h3 { color: #cbd5e1; }
+[data-md-color-scheme="slate"] .md-typeset p  { color: #94a3b8; }

@@ -1,6 +1,13 @@
-# torchloop
+<div class="hero-section" markdown>
 
-> Lightweight PyTorch utility library for training, evaluation, and edge deployment — without the framework lock-in.
+# Stop rewriting PyTorch boilerplate.
+
+torchloop handles the training loop, evaluation, logging, and export — so you can focus on the model.
+
+[Get Started](getting-started.md){ .md-button .md-button--primary }
+[View on GitHub](https://github.com/Tharun007-TK/torchloop){ .md-button }
+
+</div>
 
 [![CI](https://github.com/Tharun007-TK/torchloop/actions/workflows/ci.yml/badge.svg)](https://github.com/Tharun007-TK/torchloop/actions)
 [![PyPI](https://img.shields.io/pypi/v/torchloop)](https://pypi.org/project/torchloop/)
@@ -14,6 +21,18 @@
 You write the same PyTorch training loop in every project. Same checkpoint logic. Same metric assembly. Same export steps. It's tedious and inconsistent.
 
 `torchloop` abstracts exactly that — nothing more.
+
+---
+
+## What's Inside
+
+| Module | What it does |
+|--------|--------------|
+| **Trainer** | Training loop, early stopping, AMP, LR scheduler |
+| **Evaluator** | Classification report, confusion matrix, per-class F1 |
+| **Callbacks** | W&B and MLflow logging hooks |
+| **Exporter** | PyTorch → ONNX → TFLite |
+| **Edge** | Deployment utilities and FLOPs estimation |
 
 ---
 
@@ -46,24 +65,28 @@ fig.savefig("confusion_matrix.png")
 
 ---
 
-## Features
-
-- **Trainer** — training loop, early stopping, LR scheduler, AMP, checkpointing
-- **Evaluator** — classification report, confusion matrix, per-class F1
-- **Callbacks** — W&B and MLflow logging hooks
-- **Exporter** — PyTorch → ONNX → TFLite pipeline
-- **Edge** — deployment utilities and FLOPs estimation
-
----
-
 ## Install
 
-```bash
-pip install torchloop
+=== "Basic"
 
-# With logging integrations
-pip install torchloop[logging]
+    ```bash
+    pip install torchloop
+    ```
 
-# With export support
-pip install torchloop[export]
-```
+=== "With Logging"
+
+    ```bash
+    pip install torchloop[logging]
+    ```
+
+=== "With Export"
+
+    ```bash
+    pip install torchloop[export]
+    ```
+
+=== "Everything"
+
+    ```bash
+    pip install torchloop[all]
+    ```
