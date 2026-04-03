@@ -44,6 +44,7 @@ theme:
     - content.code.copy
     - content.code.annotate
     - announce.dismiss
+    - navigation.keyboard:false
 
 extra:
   social:
@@ -94,6 +95,7 @@ nav:
   - Home: index.md
   - Installation: installation.md
   - Getting Started: getting-started.md
+  - Export & Edge: export-and-edge.md
   - API Reference:
       - Trainer: api/trainer.md
       - Evaluator: api/evaluator.md

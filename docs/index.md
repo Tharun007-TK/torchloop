@@ -34,6 +34,8 @@ You write the same PyTorch training loop in every project. Same checkpoint logic
 | **Exporter** | PyTorch → ONNX → TFLite |
 | **Edge** | Deployment utilities and FLOPs estimation |
 
+[Learn more about Export & Edge Deployment →](export-and-edge.md){ .md-button }
+
 ---
 
 ## Quick Start
@@ -85,8 +87,36 @@ fig.savefig("confusion_matrix.png")
     pip install torchloop[export]
     ```
 
+=== "With Edge"
+
+    ```bash
+    pip install torchloop[edge]
+    ```
+
 === "Everything"
 
     ```bash
     pip install torchloop[all]
     ```
+
+---
+
+## Design Principles
+
+!!! tip "Philosophy"
+    **No lock-in**: Works with any `nn.Module`. No subclassing required.
+    
+    **Minimal surface area**: Three core modules. That's it.
+    
+    **You own the model**: torchloop wraps your loop, doesn't replace your architecture.
+
+---
+
+## Roadmap
+
+- [x] `v0.1.0` — Trainer, Evaluator, Exporter
+- [x] `v0.2.0` — LR scheduler support, mixed precision (AMP)
+- [x] `v0.2.1` — Gradient accumulation + callbacks
+- [x] `v0.2.2` — Edge submodule
+- [ ] `v0.3.0` — W&B / MLflow hooks + CoreML export
+- [ ] `v0.3.1` — Model pruning utilities

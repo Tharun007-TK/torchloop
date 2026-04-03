@@ -108,3 +108,70 @@ trainer.save("checkpoints/best.pt")
 trainer2 = Trainer(model, optimizer, criterion, device="cuda")
 trainer2.load("checkpoints/best.pt")
 ```
+
+---
+
+## Model Export
+
+### Export to ONNX
+
+```python
+from torchloop.exporter import Exporter
+
+exp = Exporter(model, input_shape=(1, 3, 224, 224))
+exp.to_onnx("model.onnx")
+```
+
+### Export to TFLite
+
+```python
+from torchloop.exporter import Exporter
+
+# Standard export
+exp = Exporter(model, input_shape=(1, 3, 224, 224))
+exp.to_tflite("model.tflite")
+
+# With quantization for smaller size and faster inference
+exp.to_tflite("model.tflite", quantize=True)
+```
+
+---
+
+## Edge Deployment
+
+### Estimate Model Resources
+
+Before deploying to edge devices, estimate RAM and latency requirements:
+
+```python
+from torchloop.edge import estimate_model
+
+stats = estimate_model(model, (1, 3, 224, 224), target_device="esp32")
+print(f"Estimated RAM: {stats['estimated_ram_mb']} MB")
+print(f"Estimated Latency: {stats['estimated_latency_ms']} ms")
+print(f"Total Parameters: {stats['total_params']}")
+print(f"Total FLOPs: {stats['total_flops']}")
+```
+
+### Deploy to Edge Devices
+
+Deploy optimized models directly to edge devices like ESP32, Raspberry Pi, or mobile:
+
+```python
+from torchloop.edge import deploy_to_edge
+
+deploy_to_edge(
+    model,
+    target="esp32",
+    input_shape=(1, 3, 224, 224),
+    output_path="model.tflite",
+    quantize=True,
+    quantize_type="int8",  # Options: "int8", "float16"
+)
+```
+
+**Supported target devices:**
+- `esp32` - ESP32 microcontrollers
+- `raspberry_pi` - Raspberry Pi (3/4/5)
+- `mobile` - Mobile devices (iOS/Android)
+- `jetson` - NVIDIA Jetson boards
